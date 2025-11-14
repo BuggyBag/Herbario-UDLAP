@@ -1,19 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Webpage</title>
-    <!-- Link to CSS -->
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herbario UDLAP</title>
+  <link rel="stylesheet" href="styles/main.css">
 </head>
-<body>
-    <h1>Welcome to My Webpage!</h1>
-    <p id="demo">This is a paragraph.</p>
-    <button onclick="changeText()">Click Me</button>
 
-    <!-- Link to JS -->
-    <script src="script.js"></script>
+<body>
+
+  <!-- LEFT SLIDE MENU -->
+  <div id="sideMenu" class="side-menu">
+    <button class="close-btn" onclick="toggleMenu()">✕</button>
+    <h3>Specimens</h3>
+    <a href="#">By Family</a>
+    <a href="#">By Location</a>
+    <a href="#">By Collection Date</a>
+    <a href="#">By Collector</a>
+    <a href="#">By Genus</a>
+    <a href="#">By Species</a>
+  </div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header>
+    <div class="left-menu-btn" onclick="toggleMenu()">☰</div>
+
+    <nav class="top-nav">
+      <a href="#">About</a>
+      <a href="#">History</a>
+      <a href="#">Language</a>
+      <a href="#">Team</a>
+      <a href="#">Projects</a>
+      <a href="#">Collaborations</a>
+    </nav>
+  </header>
+
+  <!-- MAIN CENTER CONTENT -->
+  <main class="center-box">
+    <h1 class="logo">Herbario UDLAP</h1>
+    <div class="search-container">
+      <input id="searchBox" type="text" placeholder="Search specimen...">
+      <button onclick="searchSpecimen()">🔍</button>
+    </div>
+  </main>
+
+  <script src="scripts/main.js"></script>
+
 </body>
 </html>
+
 
