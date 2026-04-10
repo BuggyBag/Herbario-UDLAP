@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ficha de Muestra — Herbario UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+    <div class="sample-layout" id="sample-layout">
+      <!-- Contenido inyectado por sample.js -->
+      <div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--muted);">
+        🌿 Cargando ficha…
+      </div>
+    </div>
+  </main>
+
+  <!-- Popup de cita -->
+  <div class="popup-overlay" id="citation-popup">
+    <div class="popup-box">
+      <h3 class="popup-title">📋 Cita Académica</h3>
+      <div class="citation-text" id="citation-text"></div>
+      <div class="popup-actions">
+        <button class="btn-secondary" id="popup-close-btn">Cerrar</button>
+        <button class="btn-primary"   id="popup-copy-btn">📋 Copiar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP ·
+       <a href="index.html">← Volver al inicio</a>
+    </p>
+  </footer>
+
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+  <script>
+    /* ── sample.js — Ficha de espécimen ─────────────────── */
+    document.addEventListener("DOMContentLoaded", async () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+
+      if (!id) {
+        mostrarError("No se especificó un ID de muestra.");
+        return;
+      }
+
+      const planta = await getSpecimenById(decodeURIComponent(id));
+      if (!planta) {
+        mostrarError("No se encontró la muestra con ID: " + id);
+        return;
+      }
+
+      // Título de la pestaña
+      document.title = `${planta.especie} — Herbario UDLAP`;
+
+      renderSample(planta);
+      initCitationPopup(planta);
+    });
+
+    function renderSample(p) {
+      const layout = document.getElementById("sample-layout");
+      const colores = (typeof FAMILIA_COLORES !== "undefined" && FAMILIA_COLORES)
+        ? (FAMILIA_COLORES[p.familia] || FAMILIA_COLORES["_default"])
+        : { bg: "#f5f5f5", text: "#424242", border: "#bdbdbd" };
+
+      const conservacion = {
+        "LC": "🟢 Preocupación menor",
+        "NT": "🟡 Casi amenazada",
+        "VU": "🟠 Vulnerable",
+        "EN": "🔴 En peligro",
+        "PR": "🟣 Protección especial (NOM-059)"
+      };
+
+      layout.innerHTML = `
+        <!-- Imagen -->
+        <div class="sample-image-wrap animate-in">
+          <img src="${p.imageURL || p.imagen || ''}"
+               alt="${p.especie}"
+               onerror="this.src='https://images.unsplash.com/photo-1542601906897-ecd2f72ddefb?w=800&q=80'">
+          <div class="sample-actions">
+            <button class="btn-primary"   id="download-btn">⬇ Descargar imagen</button>
+            <button class="btn-secondary" id="cite-btn">📋 Generar cita</button>
+          </div>
+        </div>
+
+        <!-- Información -->
+        <div class="sample-info animate-in delay-1">
+
+          <div class="sample-name-block">
+            <h1>${p.nombreComun}</h1>
+            <div class="sci-name">${p.especie}</div>
+            <span class="card-family-badge" style="background:${colores.bg};color:${colores.text};border:1px solid ${colores.border};display:inline-block;margin-top:0.6rem;">
+              ${p.familia}
+            </span>
+          </div>
+
+          <div class="citas-badge">
+            📖 Citada <strong>${p.citasCount || 0}</strong> vez${(p.citasCount || 0) !== 1 ? "es" : ""}
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--cream-dark);">
+
+          <div class="data-table">
+            <span class="data-label">N.° Catálogo</span>
+            <span class="data-value" style="font-family:'Courier New',monospace;">${p.numCatalogo}</span>
+
+            <span class="data-label">OccurrenceID</span>
+            <span class="data-value" style="font-family:'Courier New',monospace;font-size:0.78rem;">${p.occurrenceID}</span>
+
+            <span class="data-label">Género</span>
+            <span class="data-value">${p.genero}</span>
+
+            <span class="data-label">Familia</span>
+            <span class="data-value">${p.familia}</span>
+
+            <span class="data-label">Orden</span>
+            <span class="data-value">${p.orden || "—"}</span>
+
+            <span class="data-label">Clase</span>
+            <span class="data-value">${p.clase || "—"}</span>
+
+            <span class="data-label">División</span>
+            <span class="data-value">${p.division || "—"}</span>
+
+            <span class="data-label">Recolector</span>
+            <span class="data-value">${p.recolector}</span>
+
+            <span class="data-label">Determinador</span>
+            <span class="data-value">${p.determinador || p.recolector}</span>
+
+            <span class="data-label">Fecha</span>
+            <span class="data-value">${formatFecha(p.fechaRecolecta)}</span>
+
+            <span class="data-label">Localidad</span>
+            <span class="data-value">${p.lugarRecolecta}, ${p.municipio}</span>
+
+            <span class="data-label">Estado</span>
+            <span class="data-value">${p.estadoMX}, ${p.pais}</span>
+
+            <span class="data-label">Coordenadas</span>
+            <span class="data-value">${p.latitud ? `${p.latitud}° N, ${p.longitud}° O` : "—"}</span>
+
+            <span class="data-label">Altitud</span>
+            <span class="data-value">${p.altitud || "—"}</span>
+
+            <span class="data-label">Hábitat</span>
+            <span class="data-value">${p.habitat || "—"}</span>
+
+            <span class="data-label">Estado conserv.</span>
+            <span class="data-value">${conservacion[p.estadoConservacion] || "—"}</span>
+          </div>
+
+          ${p.notas ? `
+          <div style="background:var(--cream);padding:1rem;border-radius:var(--radius-sm);border-left:3px solid var(--sage-light);">
+            <div class="data-label" style="margin-bottom:4px;">Notas del recolector</div>
+            <p style="font-size:0.88rem;line-height:1.7;color:var(--charcoal);">${p.notas}</p>
+          </div>` : ""}
+
+        </div>`;
+
+      // Botones de acción
+      document.getElementById("download-btn").addEventListener("click", () => descargarImagen(p));
+      document.getElementById("cite-btn").addEventListener("click", () => mostrarCita(p));
+    }
+
+    function initCitationPopup(planta) {
+      const overlay = document.getElementById("citation-popup");
+      document.getElementById("popup-close-btn").addEventListener("click", cerrarPopup);
+      document.getElementById("popup-copy-btn").addEventListener("click", () => {
+        const texto = document.getElementById("citation-text").textContent;
+        navigator.clipboard.writeText(texto).then(() => {
+          const btn = document.getElementById("popup-copy-btn");
+          btn.textContent = "✓ Copiado";
+          setTimeout(() => { btn.textContent = "📋 Copiar"; }, 2000);
+        });
+      });
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) cerrarPopup(); });
+    }
+
+    async function mostrarCita(planta) {
+      const texto = generarTextoCita(planta);
+      document.getElementById("citation-text").textContent = texto;
+      document.getElementById("citation-popup").classList.add("open");
+      // Incrementar contador
+      await incrementarCita(planta.occurrenceID);
+      // Actualizar badge en pantalla
+      const badge = document.querySelector(".citas-badge strong");
+      if (badge) badge.textContent = parseInt(badge.textContent || "0") + 1;
+    }
+
+    function cerrarPopup() {
+      document.getElementById("citation-popup").classList.remove("open");
+    }
+
+    async function descargarImagen(planta) {
+      // Mostrar cita primero
+      await mostrarCita(planta);
+      // Luego abrir imagen en nueva pestaña para descarga
+      const a = document.createElement("a");
+      a.href = planta.imageURL || planta.imagen;
+      a.download = `${planta.numCatalogo}_${planta.especie.replace(/\s/g, "_")}.jpg`;
+      a.target = "_blank";
+      a.click();
+    }
+
+    function mostrarError(msg) {
+      document.getElementById("sample-layout").innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--muted);">
+          <div style="font-size:3rem;margin-bottom:1rem;">🌿</div>
+          <p>${msg}</p>
+          <a href="index.html" class="btn-primary" style="display:inline-block;margin-top:1rem;">
+            ← Volver al inicio
+          </a>
+        </div>`;
+    }
+
+    function formatFecha(fechaStr) {
+      if (!fechaStr) return "—";
+      try {
+        const [y, m, d] = fechaStr.split("-");
+        const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+        return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+      } catch (_) { return fechaStr; }
+    }
+  </script>
+
+</body>
+</html>

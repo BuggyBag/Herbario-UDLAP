@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colección — Herbario UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="collection">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+
+    <section class="collection-hero animate-in">
+      <h1>Colección por Familias</h1>
+      <p style="color:var(--muted);margin-top:0.5rem;font-size:0.95rem;">
+        Explora los especímenes organizados por familia botánica
+      </p>
+    </section>
+
+    <!-- Barra de ordenamiento -->
+    <div class="sort-bar animate-in delay-1">
+      <button class="sort-btn active" id="sort-alpha">A→Z</button>
+      <button class="sort-btn" id="sort-count">Mayor cantidad</button>
+      <button class="sort-btn" id="sort-count-asc">Menor cantidad</button>
+    </div>
+
+    <!-- Grid de familias (ficheros) -->
+    <div id="families-grid" class="families-grid"></div>
+
+    <!-- Vista de muestras dentro de una familia -->
+    <div id="family-specimens-view" style="display:none;">
+      <div style="padding:1rem 2.5rem;max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:1rem;">
+        <button id="back-to-families" class="btn-secondary">← Volver a familias</button>
+        <h2 id="family-view-title" style="font-family:var(--font-serif);font-size:1.6rem;"></h2>
+      </div>
+      <p id="results-info" class="results-info"></p>
+      <div id="cards-grid" class="pinterest-grid"></div>
+      <div id="empty-state" class="empty-state" style="display:none;">
+        <div class="empty-state-icon">🌿</div>
+        <p>No hay muestras en esta familia.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP · <a href="index.html">Inicio</a></p>
+  </footer>
+
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/cards.js"></script>
+  <script>
+    /* ── collection.js ─────────────────────────────────────── */
+    let _allSpecimens = [];
+    let _sortMode = "alpha";
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      _allSpecimens = await getSpecimens();
+      renderFamilias();
+
+      document.getElementById("sort-alpha").addEventListener("click", () => setSortMode("alpha"));
+      document.getElementById("sort-count").addEventListener("click", () => setSortMode("count-desc"));
+      document.getElementById("sort-count-asc").addEventListener("click", () => setSortMode("count-asc"));
+
+      document.getElementById("back-to-families").addEventListener("click", volverAFamilias);
+
+      // Si viene ?family=X en la URL, abrir directamente
+      const params = new URLSearchParams(window.location.search);
+      const familyParam = params.get("family");
+      if (familyParam) abrirFamilia(familyParam);
+    });
+
+    function setSortMode(mode) {
+      _sortMode = mode;
+      document.querySelectorAll(".sort-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(
+        mode === "alpha" ? "sort-alpha" :
+        mode === "count-desc" ? "sort-count" : "sort-count-asc"
+      ).classList.add("active");
+      renderFamilias();
+    }
+
+    function renderFamilias() {
+      const grid = document.getElementById("families-grid");
+
+      // Agrupar por familia
+      const familiaMap = {};
+      _allSpecimens.forEach(p => {
+        if (!familiaMap[p.familia]) familiaMap[p.familia] = 0;
+        familiaMap[p.familia]++;
+      });
+
+      let familias = Object.entries(familiaMap).map(([nombre, count]) => ({ nombre, count }));
+
+      // Ordenar
+      if (_sortMode === "alpha") {
+        familias.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+      } else if (_sortMode === "count-desc") {
+        familias.sort((a, b) => b.count - a.count);
+      } else {
+        familias.sort((a, b) => a.count - b.count);
+      }
+
+      const iconos = ["📁","🗂","🌿","🌱","🍃","🌾","🌺","🌸","🌼","🍂","🍀","🌳"];
+
+      grid.innerHTML = familias.map((f, i) => {
+        const colores = (typeof FAMILIA_COLORES !== "undefined" && FAMILIA_COLORES)
+          ? (FAMILIA_COLORES[f.nombre] || FAMILIA_COLORES["_default"])
+          : { bg: "#f5f5f5", text: "#424242", border: "#bdbdbd" };
+
+        return `
+          <div class="family-folder animate-in"
+               style="animation-delay:${Math.min(i*0.04, 0.4)}s;
+                      border-color:${colores.border}"
+               onclick="abrirFamilia('${f.nombre.replace(/'/g,"\\'")}')">
+            <div class="folder-icon">${iconos[i % iconos.length]}</div>
+            <div class="folder-name">${f.nombre}</div>
+            <div class="folder-count"
+                 style="background:${colores.bg};color:${colores.text};
+                        display:inline-block;padding:2px 10px;border-radius:20px;margin-top:6px;">
+              ${f.count} muestra${f.count !== 1 ? "s" : ""}
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function abrirFamilia(nombreFamilia) {
+      document.getElementById("families-grid").style.display = "none";
+      document.querySelector(".sort-bar").style.display = "none";
+      document.querySelector(".collection-hero").style.display = "none";
+      document.getElementById("family-specimens-view").style.display = "block";
+      document.getElementById("family-view-title").textContent = nombreFamilia;
+
+      const especimenes = _allSpecimens.filter(p => p.familia === nombreFamilia);
+      const sorted = [...especimenes].sort((a, b) =>
+        (a.nombreComun || "").localeCompare(b.nombreComun || "", "es")
+      );
+      renderizarGrid(sorted);
+    }
+
+    function volverAFamilias() {
+      document.getElementById("families-grid").style.display = "grid";
+      document.querySelector(".sort-bar").style.display = "flex";
+      document.querySelector(".collection-hero").style.display = "block";
+      document.getElementById("family-specimens-view").style.display = "none";
+      // Limpiar URL
+      history.replaceState(null, "", window.location.pathname);
+    }
+  </script>
+
+</body>
+</html>

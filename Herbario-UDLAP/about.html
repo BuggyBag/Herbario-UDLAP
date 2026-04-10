@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acerca del Herbario — UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="about">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+
+    <div class="about-hero">
+      <h1 class="animate-in">Herbario Digital UDLAP</h1>
+      <p class="animate-in delay-1">
+        Colección botánica de la Universidad de las Américas Puebla,<br>
+        preservando la biodiversidad vegetal de México.
+      </p>
+    </div>
+
+    <div class="about-content">
+
+      <div class="about-section animate-in">
+        <h2>Historia</h2>
+        <p>
+          El Herbario de la Universidad de las Américas Puebla fue fundado como parte del
+          Departamento de Biología con el objetivo de documentar y preservar la flora regional
+          de Puebla y estados aledaños. A lo largo de los años, la colección ha crecido gracias
+          a las expediciones de campo realizadas por docentes, investigadores y estudiantes de
+          licenciatura y posgrado.
+        </p>
+        <p style="margin-top:0.8rem;">
+          En 2022, el herbario se incorporó a la
+          <strong>Red de Herbarios Mexicanos (RDHM)</strong>, organización que proporciona
+          infraestructura de datos y alojamiento de registros bajo el estándar internacional
+          Darwin Core Archive (DwC-A), garantizando la interoperabilidad con redes globales
+          como GBIF y iDigBio.
+        </p>
+      </div>
+
+      <div class="about-section animate-in delay-1">
+        <h2>Misión</h2>
+        <p>
+          Documentar, preservar y difundir el patrimonio botánico de la región mediante la
+          colecta científica rigurosa, la digitalización de especímenes y el acceso abierto
+          al conocimiento generado, apoyando la investigación, la docencia y la conservación
+          de la biodiversidad vegetal de México.
+        </p>
+      </div>
+
+      <div class="about-section animate-in delay-2">
+        <h2>Visión</h2>
+        <p>
+          Ser una colección de referencia para la flora del Altiplano Mexicano, reconocida por
+          la calidad de sus registros, la apertura de sus datos y su papel como herramienta
+          educativa en la formación de biólogos comprometidos con la conservación.
+        </p>
+      </div>
+
+      <div class="about-section animate-in">
+        <h2>Estándares y afiliaciones</h2>
+        <ul>
+          <li>
+            <strong>Red de Herbarios Mexicanos (RDHM)</strong> — afiliación institucional que
+            provee alojamiento y exposición de datos.
+          </li>
+          <li>
+            <strong>Darwin Core Archive (DwC-A)</strong> — estándar internacional de
+            biodiversidad usado para todos los registros.
+          </li>
+          <li>
+            <strong>OccurrenceID</strong> — identificador único por espécimen con formato
+            <code>UDLAP:herbarium:XXXXXXXX</code>.
+          </li>
+          <li>
+            <strong>Número de catálogo</strong> — formato interno
+            <code>geno-espe-#####</code> que combina abreviatura de género y especie con
+            número secuencial.
+          </li>
+          <li>
+            <strong>NOM-059-SEMARNAT-2010</strong> — norma oficial mexicana para especies
+            en riesgo, referenciada en las fichas cuando aplica.
+          </li>
+        </ul>
+      </div>
+
+      <div class="about-section animate-in delay-1">
+        <h2>Equipo</h2>
+        <div class="contact-grid">
+          <div class="contact-card">
+            <div class="contact-name">Dra. Consuelo Vega</div>
+            <div class="contact-role">Curadora del Herbario</div>
+            <div class="contact-email">consuelo.vega@udlap.mx</div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-name">Dr. Héctor Ramírez</div>
+            <div class="contact-role">Investigador Asociado</div>
+            <div class="contact-email">hector.ramirez@udlap.mx</div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-name">M.C. Sofía Landa</div>
+            <div class="contact-role">Técnico Académico</div>
+            <div class="contact-email">sofia.landa@udlap.mx</div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-name">Departamento de Biología</div>
+            <div class="contact-role">UDLAP — Edificio CUL</div>
+            <div class="contact-email">biologia@udlap.mx</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-section animate-in delay-2">
+        <h2>Cómo citar el herbario</h2>
+        <p>
+          Las citas académicas se generan automáticamente desde cada ficha de espécimen.
+          El formato estándar es:
+        </p>
+        <div style="background:var(--cream-dark);padding:1rem 1.2rem;border-radius:var(--radius-sm);
+                    margin-top:0.8rem;font-family:'Courier New',monospace;font-size:0.82rem;
+                    line-height:1.8;color:var(--charcoal);">
+          [Recolector]. ([Año]). [Especie] [Espécimen de herbario [N.° Catálogo]].
+          Herbario Digital UDLAP. OccurrenceID: UDLAP:herbarium:XXXXXXXX.
+          Red de Herbarios Mexicanos.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP · Biología · <a href="index.html">Inicio</a></p>
+  </footer>
+
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+
+</body>
+</html>

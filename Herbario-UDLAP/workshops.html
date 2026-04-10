@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talleres — Herbario UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="workshops">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+    <div class="workshops-layout">
+
+      <!-- ── Columna principal: historial ─────────────── -->
+      <section>
+        <h1 style="font-family:var(--font-serif);font-size:clamp(1.8rem,4vw,3rem);
+                   margin-bottom:0.5rem;" class="animate-in">Talleres</h1>
+        <p style="color:var(--muted);margin-bottom:2rem;font-size:0.95rem;" class="animate-in delay-1">
+          Historial de actividades y talleres del Herbario UDLAP
+        </p>
+
+        <div id="workshops-list"></div>
+      </section>
+
+      <!-- ── Sidebar: próximos talleres ───────────────── -->
+      <aside class="upcoming-sidebar animate-in delay-2">
+        <h2 class="sidebar-title">Próximos talleres</h2>
+        <div id="upcoming-list"></div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Modal de registro a taller -->
+  <div class="modal-overlay" id="register-modal">
+    <div class="modal-box">
+      <h3 class="modal-title" id="register-modal-title">Registrarse al taller</h3>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1.5rem;">
+        Selecciona cómo deseas registrarte:
+      </p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button class="btn-primary" id="login-register-btn">
+          🎓 Registrarme con cuenta institucional
+        </button>
+        <button class="btn-secondary" id="guest-register-btn">
+          👤 Continuar como invitado (genera código QR)
+        </button>
+      </div>
+      <div id="qr-area" style="display:none;text-align:center;margin-top:1.5rem;">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">
+          Tu código QR de invitado para el taller:
+        </p>
+        <div id="qr-code-display"
+             style="background:var(--cream-dark);border-radius:12px;padding:2rem;
+                    font-size:0.8rem;color:var(--muted);letter-spacing:0.05em;">
+          <!-- En producción: integrar librería qrcode.js -->
+          [QR generado automáticamente]<br>
+          <span id="qr-code-text" style="font-family:'Courier New',monospace;font-size:0.9rem;
+                                          color:var(--sage-dark);display:block;margin-top:0.5rem;"></span>
+        </div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:0.8rem;">
+          Presenta este código al ingreso del taller
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="register-modal-close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP · <a href="index.html">Inicio</a></p>
+  </footer>
+
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+  <script>
+    /* ── workshops.js ──────────────────────────────────── */
+    let _tallerSeleccionado = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const talleres = await getTalleres();
+
+      const pasados  = talleres.filter(t => t.estado === "pasado");
+      const proximos = talleres.filter(t => t.estado === "proximo");
+
+      renderPasados(pasados);
+      renderProximos(proximos);
+      initModal();
+    });
+
+    function renderPasados(talleres) {
+      const list = document.getElementById("workshops-list");
+      if (!talleres.length) {
+        list.innerHTML = '<p style="color:var(--muted);">No hay talleres registrados aún.</p>';
+        return;
+      }
+      list.innerHTML = talleres.map((t, i) => `
+        <div class="workshop-card animate-in" style="animation-delay:${i*0.08}s">
+          ${t.galeria && t.galeria.length ? `
+          <div class="workshop-gallery">
+            ${t.galeria.map(img => `<img src="${img}" alt="Foto del taller" loading="lazy">`).join("")}
+          </div>` : ""}
+          <div class="workshop-card-body">
+            <div class="workshop-date">
+              📅 ${formatFecha(t.fecha)} · ${t.duracion}
+            </div>
+            <h3 class="workshop-title">${t.titulo}</h3>
+            <p style="font-size:0.88rem;line-height:1.7;color:var(--charcoal);margin-bottom:0.8rem;">
+              ${t.descripcion}
+            </p>
+            <div class="workshop-meta">
+              <span>👩‍🏫 ${t.instructor}</span>
+              <span>📍 ${t.lugar}</span>
+              <span>👥 ${t.cupoActual}/${t.cupoMax} asistentes</span>
+            </div>
+          </div>
+        </div>`).join("");
+    }
+
+    function renderProximos(proximos) {
+      const list = document.getElementById("upcoming-list");
+      if (!proximos.length) {
+        list.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">No hay talleres próximos programados.</p>';
+        return;
+      }
+      list.innerHTML = proximos.map(t => `
+        <div class="upcoming-card animate-in">
+          <div class="upcoming-date">📅 ${formatFecha(t.fecha)} · ${t.hora}</div>
+          <h4 class="upcoming-title">${t.titulo}</h4>
+          <div class="upcoming-spots">
+            👥 ${t.cupoMax - t.cupoActual} lugar${(t.cupoMax - t.cupoActual) !== 1 ? "es" : ""} disponible${(t.cupoMax - t.cupoActual) !== 1 ? "s" : ""}
+          </div>
+          <button class="btn-primary" style="width:100%;font-size:0.85rem;"
+                  onclick="abrirRegistro('${t.id}', '${t.titulo.replace(/'/g,"\\'")}', '${t.fecha}', '${t.hora}')">
+            Registrarme →
+          </button>
+        </div>`).join("");
+    }
+
+    function abrirRegistro(id, titulo, fecha, hora) {
+      _tallerSeleccionado = { id, titulo, fecha, hora };
+      document.getElementById("register-modal-title").textContent = `Registrarse: ${titulo}`;
+      document.getElementById("qr-area").style.display = "none";
+      document.getElementById("register-modal").classList.add("open");
+    }
+
+    function initModal() {
+      const modal = document.getElementById("register-modal");
+
+      document.getElementById("register-modal-close").addEventListener("click", () => {
+        modal.classList.remove("open");
+      });
+      modal.addEventListener("click", e => {
+        if (e.target === modal) modal.classList.remove("open");
+      });
+
+      document.getElementById("login-register-btn").addEventListener("click", async () => {
+        await loginConGoogle();
+        alert("✅ Registrado con cuenta institucional. Recibirás confirmación por correo.");
+        modal.classList.remove("open");
+      });
+
+      document.getElementById("guest-register-btn").addEventListener("click", () => {
+        const { titulo, fecha, hora } = _tallerSeleccionado || {};
+        const codigo = `UDLAP-GUEST-${Date.now().toString(36).toUpperCase()}`;
+        document.getElementById("qr-code-text").textContent = `${codigo}\n${titulo}\n${fecha} ${hora}`;
+        document.getElementById("qr-area").style.display = "block";
+      });
+    }
+
+    function formatFecha(fechaStr) {
+      if (!fechaStr) return "—";
+      try {
+        const [y, m, d] = fechaStr.split("-");
+        const meses = ["enero","febrero","marzo","abril","mayo","junio",
+                       "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+        return `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`;
+      } catch (_) { return fechaStr; }
+    }
+  </script>
+
+</body>
+</html>

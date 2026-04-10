@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil — Herbario UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="profile">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+    <div class="profile-section">
+
+      <!-- ── Estado: sin sesión ───────────────────────── -->
+      <div id="guest-view" class="animate-in">
+        <div class="profile-card">
+          <div class="profile-avatar">🌿</div>
+          <h2 class="profile-name">Bienvenido</h2>
+          <span class="profile-role">Invitado</span>
+          <p style="margin-top:1rem;font-size:0.88rem;color:var(--muted);line-height:1.7;">
+            Inicia sesión con tu cuenta institucional UDLAP para acceder a materiales
+            descargables, registrarte en talleres y más.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.5rem;">
+            <button class="btn-primary" id="login-btn">
+              🎓 Iniciar sesión con cuenta UDLAP
+            </button>
+            <button class="btn-secondary" id="guest-continue-btn">
+              👤 Continuar como invitado
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Estado: con sesión ───────────────────────── -->
+      <div id="user-view" style="display:none;" class="animate-in">
+
+        <div class="profile-card" id="profile-card-info">
+          <div class="profile-avatar" id="user-avatar">👤</div>
+          <h2 class="profile-name" id="user-name">—</h2>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:0.4rem;">
+            <span class="profile-role" id="user-role-badge">—</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;" id="user-email">—</p>
+          <div style="display:flex;gap:10px;margin-top:1.5rem;flex-wrap:wrap;justify-content:center;">
+            <button class="btn-secondary" id="logout-btn">Cerrar sesión</button>
+            <button class="btn-primary" id="admin-panel-btn" style="display:none;">
+              ⚙️ Panel de Control
+            </button>
+          </div>
+        </div>
+
+        <!-- Materiales descargables -->
+        <div id="materials-section" style="margin-top:2rem;display:none;">
+          <h3 style="font-family:var(--font-serif);font-size:1.5rem;margin-bottom:0.8rem;">
+            📚 Materiales de estudio
+          </h3>
+          <div id="materials-grid" class="materials-grid"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP · <a href="index.html">Inicio</a></p>
+  </footer>
+
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+  <script>
+    /* ── profile.js ──────────────────────────────────────── */
+    document.addEventListener("DOMContentLoaded", () => {
+
+      // Escuchar estado de sesión
+      onSession(async (user) => {
+        if (user) {
+          await mostrarSesionIniciada(user);
+        } else {
+          mostrarSinSesion();
+        }
+      });
+
+      // Botones
+      document.getElementById("login-btn").addEventListener("click", async () => {
+        try {
+          const user = await loginConGoogle();
+          await mostrarSesionIniciada(user);
+        } catch (err) {
+          alert("Error al iniciar sesión: " + err.message);
+        }
+      });
+
+      document.getElementById("guest-continue-btn").addEventListener("click", () => {
+        alert("Continuando como invitado. Puedes explorar la colección libremente.");
+        window.location.href = "index.html";
+      });
+
+      document.getElementById("logout-btn").addEventListener("click", async () => {
+        await logout();
+        mostrarSinSesion();
+      });
+
+      document.getElementById("admin-panel-btn").addEventListener("click", () => {
+        window.location.href = "admin.html";
+      });
+    });
+
+    async function mostrarSesionIniciada(user) {
+      document.getElementById("guest-view").style.display = "none";
+      document.getElementById("user-view").style.display = "block";
+
+      // Datos del usuario
+      document.getElementById("user-name").textContent  = user.nombre || user.displayName || "Usuario";
+      document.getElementById("user-email").textContent = user.email || "";
+
+      const rol = await getUserRole(user.uid);
+      const rolLabels = { admin: "Administrador", developer: "Desarrollador", user: "Estudiante" };
+      document.getElementById("user-role-badge").textContent = rolLabels[rol] || "Invitado";
+
+      // Emoji del avatar según rol
+      const avatarEmojis = { admin: "🔬", developer: "⚙️", user: "🎓" };
+      document.getElementById("user-avatar").textContent = avatarEmojis[rol] || "👤";
+
+      // Mostrar botón admin si tiene permisos
+      if (rol === "admin" || rol === "developer") {
+        document.getElementById("admin-panel-btn").style.display = "inline-block";
+      }
+
+      // Cargar materiales
+      await cargarMateriales();
+    }
+
+    function mostrarSinSesion() {
+      document.getElementById("guest-view").style.display = "block";
+      document.getElementById("user-view").style.display = "none";
+    }
+
+    async function cargarMateriales() {
+      const materialesSection = document.getElementById("materials-section");
+      const grid = document.getElementById("materials-grid");
+      materialesSection.style.display = "block";
+
+      const materiales = await getMateriales();
+      const iconos = { PDF: "📄", XLSX: "📊", DOCX: "📝", IMG: "🖼" };
+
+      grid.innerHTML = materiales.map(m => `
+        <div class="material-card" onclick="descargarMaterial('${m.url}', '${m.titulo.replace(/'/g,"\\'")}')">
+          <div class="material-icon">${iconos[m.tipo] || "📄"}</div>
+          <div>
+            <div class="material-title">${m.titulo}</div>
+            <div class="material-desc">${m.descripcion}</div>
+            <div style="font-size:0.72rem;color:var(--sage);margin-top:4px;">${m.tipo} · ${m.fecha}</div>
+          </div>
+        </div>`).join("");
+    }
+
+    function descargarMaterial(url, titulo) {
+      if (url === "#") {
+        alert(`El material "${titulo}" estará disponible próximamente.`);
+        return;
+      }
+      window.open(url, "_blank");
+    }
+  </script>
+
+</body>
+</html>

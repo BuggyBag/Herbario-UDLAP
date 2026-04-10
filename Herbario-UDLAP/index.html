@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Herbario Digital — UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="index">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+
+    <!-- ── Buscador héroe ──────────────────────────────── -->
+    <section class="search-hero">
+      <h1 class="search-hero-title animate-in">Herbario Digital</h1>
+      <p class="search-hero-sub animate-in delay-1">
+        Universidad de las Américas Puebla · Colección Botánica
+      </p>
+
+      <div class="search-wrap animate-in delay-2">
+        <span class="search-icon">🔍</span>
+        <input type="text"
+               id="search-input"
+               class="search-input"
+               placeholder="Buscar por nombre, especie, familia…"
+               autocomplete="off"
+               aria-label="Buscar especímenes" />
+        <div id="autocomplete-list" class="autocomplete-list" style="display:none;"></div>
+      </div>
+
+      <!-- Filtros expandibles -->
+      <div class="filters-strip animate-in delay-3">
+        <button id="filter-toggle" class="filter-toggle-btn">▼ Filtros</button>
+        <div id="filters-panel" class="filters-panel">
+          <select id="filter-familia" class="filter-select">
+            <option value="">Todas las familias</option>
+          </select>
+          <select id="filter-genero" class="filter-select">
+            <option value="">Todos los géneros</option>
+          </select>
+          <select id="filter-estado" class="filter-select">
+            <option value="">Todos los estados</option>
+          </select>
+          <button id="reset-btn" class="btn-clear">✕ Limpiar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contador de resultados -->
+    <p id="results-info" class="results-info"></p>
+
+    <!-- ── Mosaico de muestras ────────────────────────── -->
+    <div id="cards-grid" class="pinterest-grid"></div>
+
+    <!-- Estado vacío -->
+    <div id="empty-state" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">🌿</div>
+      <p>No se encontraron muestras coincidentes.</p>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP · Biología ·
+       <a href="about.html">Acerca del Herbario</a>
+    </p>
+  </footer>
+
+  <!-- Orden de carga CRÍTICO:
+       1. mock-database → datos brutos
+       2. db            → funciones de acceso (usa PLANTAS_MOCK)
+       3. header        → inyecta la navegación
+       4. cards         → renderiza tarjetas
+       5. filters       → lógica de búsqueda y filtros
+       6. app           → inicialización de la página
+  -->
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/filters.js"></script>
+  <script>
+    /* app — Inicio (index.html) */
+    document.addEventListener("DOMContentLoaded", async () => {
+      const especimenes = await getSpecimens();
+
+      // Actualizar contador en header si existe
+      const counter = document.getElementById("total-count");
+      if (counter) counter.textContent = especimenes.length;
+
+      // Iniciar filtros
+      iniciarFiltros(especimenes);
+
+      // Render inicial en orden aleatorio
+      const shuffled = [...especimenes];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      renderizarGrid(shuffled);
+    });
+  </script>
+
+</body>
+</html>

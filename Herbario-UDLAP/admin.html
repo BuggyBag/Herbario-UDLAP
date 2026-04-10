@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Control — Herbario UDLAP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body data-page="admin">
+
+  <!-- header.js lo inyecta aquí -->
+
+  <main>
+    <div class="admin-layout">
+
+      <h1 class="admin-title animate-in">Panel de Control</h1>
+      <p class="admin-subtitle animate-in delay-1">
+        Acceso restringido — Administradores y Desarrolladores UDLAP
+      </p>
+
+      <!-- Aviso de acceso no autorizado (oculto por defecto) -->
+      <div id="access-denied" style="display:none;background:var(--cream-dark);
+           border-left:4px solid #e74c3c;padding:1.2rem;border-radius:var(--radius-sm);
+           margin-bottom:2rem;font-size:0.9rem;color:var(--charcoal);">
+        ⛔ No tienes permisos para acceder al Panel de Control.
+        <a href="index.html" style="color:var(--sage);margin-left:8px;">← Volver al inicio</a>
+      </div>
+
+      <!-- Contenido del panel (visible tras verificar permisos) -->
+      <div id="panel-content" style="display:none;">
+
+        <div class="admin-grid">
+
+          <!-- 1. Registro nuevo -->
+          <div class="admin-btn-card animate-in" id="btn-registro">
+            <span class="admin-card-icon">🌱</span>
+            <span class="admin-card-label">Registro Nuevo</span>
+            <span class="admin-card-desc">
+              Registra una nueva muestra. Genera automáticamente el N.° de catálogo
+              y el OccurrenceID en formato UDLAP.
+            </span>
+          </div>
+
+          <!-- 2. Consultar base de datos -->
+          <div class="admin-btn-card animate-in delay-1" id="btn-consultar">
+            <span class="admin-card-icon">📊</span>
+            <span class="admin-card-label">Consultar Base de Datos</span>
+            <span class="admin-card-desc">
+              Vista completa de todos los registros en tabla, con buscador y exportación.
+            </span>
+          </div>
+
+          <!-- 3. Editar en RDHM -->
+          <div class="admin-btn-card animate-in delay-2" id="btn-editar">
+            <span class="admin-card-icon">✏️</span>
+            <span class="admin-card-label">Editar Base de Datos</span>
+            <span class="admin-card-desc">
+              Redirige al portal RDHM con autenticación automática en segundo plano.
+            </span>
+          </div>
+
+          <!-- 4. Portal RDHM -->
+          <div class="admin-btn-card animate-in delay-3" id="btn-rdhm">
+            <span class="admin-card-icon">🌐</span>
+            <span class="admin-card-label">Portal RDHM</span>
+            <span class="admin-card-desc">
+              Accede al portal completo de la Red de Herbarios Mexicanos.
+            </span>
+          </div>
+
+          <!-- 5. Salir -->
+          <div class="admin-btn-card admin-card-exit animate-in" id="btn-salir">
+            <span class="admin-card-icon">←</span>
+            <span class="admin-card-label">Salir del Panel</span>
+          </div>
+
+        </div>
+
+        <!-- ── Vista tabla de base de datos ───────────── -->
+        <div id="db-table-view" style="display:none;margin-top:2.5rem;">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+            <h3 style="font-family:var(--font-serif);font-size:1.5rem;">Base de Datos</h3>
+            <button class="btn-secondary" id="close-table-btn" style="margin-left:auto;">✕ Cerrar</button>
+          </div>
+          <div class="db-table-wrap">
+            <table id="db-table">
+              <thead>
+                <tr>
+                  <th>N.° Catálogo</th>
+                  <th>Nombre Común</th>
+                  <th>Especie</th>
+                  <th>Familia</th>
+                  <th>Estado</th>
+                  <th>Recolector</th>
+                  <th>Fecha</th>
+                  <th>OccurrenceID</th>
+                  <th>Citas</th>
+                </tr>
+              </thead>
+              <tbody id="db-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Registro Nuevo ─────────────────────────────── -->
+  <div class="modal-overlay" id="registro-modal">
+    <div class="modal-box">
+      <h3 class="modal-title">🌱 Registro Nuevo</h3>
+
+      <div style="background:var(--cream);border-radius:var(--radius-sm);padding:0.8rem 1rem;
+                  margin-bottom:1.2rem;font-size:0.82rem;color:var(--muted);">
+        Los campos <strong>N.° Catálogo</strong> y <strong>OccurrenceID</strong> se
+        generan automáticamente al guardar.
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombre Común *</label>
+          <input type="text" class="form-input" id="f-nombreComun" placeholder="Ej: Girasol">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Género *</label>
+          <input type="text" class="form-input" id="f-genero" placeholder="Ej: Helianthus">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Especie (epíteto) *</label>
+          <input type="text" class="form-input" id="f-especie" placeholder="Ej: Helianthus annuus">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Familia *</label>
+          <input type="text" class="form-input" id="f-familia" placeholder="Ej: Asteraceae">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recolector</label>
+          <input type="text" class="form-input" id="f-recolector" placeholder="Nombre del recolector">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de recolecta</label>
+          <input type="date" class="form-input" id="f-fechaRecolecta">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Localidad</label>
+          <input type="text" class="form-input" id="f-lugarRecolecta" placeholder="Nombre del sitio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Municipio</label>
+          <input type="text" class="form-input" id="f-municipio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <input type="text" class="form-input" id="f-estadoMX" placeholder="Puebla">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Altitud (msnm)</label>
+          <input type="text" class="form-input" id="f-altitud" placeholder="Ej: 2100 msnm">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Hábitat</label>
+          <input type="text" class="form-input" id="f-habitat" placeholder="Descripción del hábitat">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Notas del recolector</label>
+          <textarea class="form-textarea" id="f-notas" placeholder="Observaciones adicionales…"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">URL de imagen</label>
+          <input type="url" class="form-input" id="f-imageURL" placeholder="https://…">
+        </div>
+      </div>
+
+      <!-- IDs generados (preview) -->
+      <div style="margin-top:1.2rem;display:flex;flex-direction:column;gap:8px;">
+        <div>
+          <span class="form-label">N.° Catálogo generado:</span>
+          <div class="form-generated" id="preview-catalogo">— ingresa género y especie —</div>
+        </div>
+        <div>
+          <span class="form-label">OccurrenceID generado:</span>
+          <div class="form-generated" id="preview-occurrence">— se genera al guardar —</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="registro-cancel-btn">Cancelar</button>
+        <button class="btn-primary"   id="registro-save-btn">💾 Guardar registro</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Herbario Digital UDLAP · <a href="index.html">Inicio</a></p>
+  </footer>
+
+  <script src="js/mock-database.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/header.js"></script>
+  <script>
+    /* ── admin.js ────────────────────────────────────────── */
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Verificar permisos
+      const rol = await getUserRole();
+      if (rol !== "admin" && rol !== "developer") {
+        document.getElementById("access-denied").style.display = "block";
+        return;
+      }
+      document.getElementById("panel-content").style.display = "block";
+
+      initAdminButtons();
+      initRegistroModal();
+    });
+
+    function initAdminButtons() {
+      // 1. Registro nuevo
+      document.getElementById("btn-registro").addEventListener("click", () => {
+        abrirRegistroModal();
+      });
+
+      // 2. Consultar BD
+      document.getElementById("btn-consultar").addEventListener("click", async () => {
+        await cargarTabla();
+        document.getElementById("db-table-view").style.display = "block";
+        document.getElementById("db-table-view").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("close-table-btn").addEventListener("click", () => {
+        document.getElementById("db-table-view").style.display = "none";
+      });
+
+      // 3. Editar en RDHM
+      document.getElementById("btn-editar").addEventListener("click", async () => {
+        const confirmar = confirm(
+          "Se abrirá el portal RDHM en modo edición.\n" +
+          "La autenticación se realizará automáticamente en segundo plano."
+        );
+        if (confirmar) await abrirRDHM("edit");
+      });
+
+      // 4. Portal RDHM
+      document.getElementById("btn-rdhm").addEventListener("click", async () => {
+        await abrirRDHM("home");
+      });
+
+      // 5. Salir
+      document.getElementById("btn-salir").addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+    }
+
+    /* ── Modal de registro ────────────────────────────────── */
+    function abrirRegistroModal() {
+      // Generar preview de OccurrenceID
+      document.getElementById("preview-occurrence").textContent = generarOccurrenceID();
+      updateCatalogoPreview();
+      document.getElementById("registro-modal").classList.add("open");
+    }
+
+    function updateCatalogoPreview() {
+      const genero  = document.getElementById("f-genero").value.trim();
+      const especie = document.getElementById("f-especie").value.trim();
+      if (genero && especie) {
+        const epiteto = especie.includes(" ") ? especie.split(" ")[1] : especie;
+        const num = PLANTAS_MOCK.length + 1;
+        document.getElementById("preview-catalogo").textContent =
+          generarNumCatalogo(genero, epiteto, num);
+      } else {
+        document.getElementById("preview-catalogo").textContent = "— ingresa género y especie —";
+      }
+    }
+
+    function initRegistroModal() {
+      const modal = document.getElementById("registro-modal");
+
+      // Actualizar preview en tiempo real
+      ["f-genero", "f-especie"].forEach(id => {
+        document.getElementById(id).addEventListener("input", updateCatalogoPreview);
+      });
+
+      document.getElementById("registro-cancel-btn").addEventListener("click", () => {
+        modal.classList.remove("open");
+      });
+
+      modal.addEventListener("click", e => {
+        if (e.target === modal) modal.classList.remove("open");
+      });
+
+      document.getElementById("registro-save-btn").addEventListener("click", async () => {
+        const datos = {
+          nombreComun:   document.getElementById("f-nombreComun").value.trim(),
+          genero:        document.getElementById("f-genero").value.trim(),
+          especie:       document.getElementById("f-especie").value.trim(),
+          familia:       document.getElementById("f-familia").value.trim(),
+          recolector:    document.getElementById("f-recolector").value.trim(),
+          fechaRecolecta:document.getElementById("f-fechaRecolecta").value,
+          lugarRecolecta:document.getElementById("f-lugarRecolecta").value.trim(),
+          municipio:     document.getElementById("f-municipio").value.trim(),
+          estadoMX:      document.getElementById("f-estadoMX").value.trim(),
+          pais:          "México",
+          altitud:       document.getElementById("f-altitud").value.trim(),
+          habitat:       document.getElementById("f-habitat").value.trim(),
+          notas:         document.getElementById("f-notas").value.trim(),
+          imageURL:      document.getElementById("f-imageURL").value.trim()
+        };
+
+        if (!datos.nombreComun || !datos.genero || !datos.especie || !datos.familia) {
+          alert("Por favor completa los campos obligatorios: Nombre Común, Género, Especie y Familia.");
+          return;
+        }
+
+        const btn = document.getElementById("registro-save-btn");
+        btn.textContent = "Guardando…";
+        btn.disabled = true;
+
+        try {
+          const { occurrenceID, numCatalogo } = await registrarEspecimen(datos);
+          modal.classList.remove("open");
+          alert(
+            `✅ Espécimen registrado exitosamente.\n\n` +
+            `N.° Catálogo: ${numCatalogo}\n` +
+            `OccurrenceID: ${occurrenceID}`
+          );
+          // Limpiar formulario
+          modal.querySelectorAll("input, textarea").forEach(el => el.value = "");
+        } catch (err) {
+          alert("Error al guardar: " + err.message);
+        } finally {
+          btn.textContent = "💾 Guardar registro";
+          btn.disabled = false;
+        }
+      });
+    }
+
+    /* ── Tabla de base de datos ────────────────────────── */
+    async function cargarTabla() {
+      const especimenes = await getSpecimens(500);
+      const tbody = document.getElementById("db-tbody");
+      tbody.innerHTML = especimenes.map(p => `
+        <tr>
+          <td style="font-family:'Courier New',monospace;font-size:0.78rem;">${p.numCatalogo}</td>
+          <td>${p.nombreComun}</td>
+          <td><em>${p.especie}</em></td>
+          <td>${p.familia}</td>
+          <td>${p.estadoMX || "—"}</td>
+          <td>${p.recolector}</td>
+          <td>${p.fechaRecolecta || "—"}</td>
+          <td style="font-family:'Courier New',monospace;font-size:0.72rem;">${p.occurrenceID}</td>
+          <td style="text-align:center;">${p.citasCount || 0}</td>
+        </tr>`).join("");
+    }
+  </script>
+
+</body>
+</html>
